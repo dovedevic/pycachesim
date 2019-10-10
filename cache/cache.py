@@ -69,7 +69,7 @@ class Cache:
             return None
         else:
             # Block is not existing in cache and space is not available, evict
-            evicted_block_index = self._policy.evict(self._cache[cache_set])
-            evicted_block = self._cache[cache_set][evicted_block_index]
+            evicted_block = self._policy.evict(self._cache[cache_set])
+            evicted_block_index = self._cache[cache_set].index(evicted_block)
             self._cache[cache_set][evicted_block_index] = block
             return evicted_block
