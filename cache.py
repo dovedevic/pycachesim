@@ -3,6 +3,21 @@ import enum
 from policies import ReplacementPolicy
 
 
+class AddressSpace(enum.Enum):
+    """
+    Defines the address space supported by a system or cache
+    """
+    in128Bit = 0xffffffffffffffffffffffffffffffff
+    in112Bit = 0xffffffffffffffffffffffffffff
+    in96Bit = 0xffffffffffffffffffffffff
+    in80Bit = 0xffffffffffffffffffff
+    in64Bit = 0xffffffffffffffff
+    in48Bit = 0xffffffffffff
+    in32Bit = 0xffffffff
+    in16Bit = 0xffff
+    in8Bit = 0xff
+
+
 class Block:
     """
     Defines the most atomic unit in a cache, the block
@@ -24,7 +39,10 @@ class Block:
         return "[{}]{},{}:{}".format(hex(self._base_address), self._dirty, self._policy.name(), self._policy_data)
 
     def __eq__(self, other):
-        return True if isinstance(other, Block) and self._base_address == other._base_address else False
+        if isinstance(other, Block):
+            return True if self._base_address == other._base_address else False
+        else:
+            return True if self._base_address == other else False
 
     def read(self):
         """
@@ -57,7 +75,19 @@ class Block:
 
 
 class Cache:
-    def __init__(self, addressspace, size, associativity, blocksize, policy: ReplacementPolicy):
+    """
+    Defines one level or type of cache, the most atomic unit in a cache system
+    """
+
+    def __init__(self, addressspace: AddressSpace, size: int, associativity: int, blocksize: int, policy: ReplacementPolicy):
+        """
+        The initializer for the generic single cache
+        :param addressspace: The address space (of type cache.AddressSpace) this cache runs on
+        :param size: The total size in bytes of the cache
+        :param associativity: The number of ways in a set
+        :param blocksize: The size in bytes of a single block
+        :param policy: The replacement policy (of type policies.ReplacementPolicy) this cache runs evictions on
+        """
         self._addressspace = addressspace.value
         self._size = size
         self._associativity = associativity
@@ -75,21 +105,19 @@ class Cache:
         for cache_set in range(0, self._sets):
             self._cache[cache_set] = [None for i in range(associativity)]
 
-    def _touch(self, block):
+    def get(self, address):
         """
-        Touch a block in this cache to update the policy managing this item
-        :param block:
-        :return hit:
+        Access the cache and attempt to get a block from an address
+        :param address: The address to be fetched
+        :return hit: None if miss, Block if hit
         """
-        return False
-
-    def get(self, block):
-        """
-        Access the cache and attempt to get a block
-        :param block:
-        :return hit:
-        """
-        return None
+        cache_set = ((2 ** self._tag_bits) << (self._offset_bits + self._index_bits)) & address >> self._offset_bits
+        base_address = address >> self._offset_bits << self._offset_bits
+        if base_address in self._cache[cache_set]:
+            fetched = self._cache[cache_set].index(base_address)
+            return self._cache[cache_set][fetched]
+        else:
+            return None
 
     def put(self, block: Block):
         """
@@ -98,8 +126,7 @@ class Cache:
         :param block:
         :return replacement:
         """
-
-        cache_set = block.base_address() << self._tag_bits >> self._tag_bits + self._offset_bits
+        cache_set = ((2 ** self._tag_bits) << (self._offset_bits + self._index_bits)) & block.base_address() >> self._offset_bits
         if block in self._cache[cache_set]:
             # Block is existing in cache, assuming rewrite
             replacement = self._cache[cache_set].index(block)
@@ -118,16 +145,3 @@ class Cache:
             return evicted_block
 
 
-class AddressSpace(enum.Enum):
-    """
-    Defines the address space supported by a system or cache
-    """
-    in128Bit = 0xffffffffffffffffffffffffffffffff
-    in112Bit = 0xffffffffffffffffffffffffffff
-    in96Bit = 0xffffffffffffffffffffffff
-    in80Bit = 0xffffffffffffffffffff
-    in64Bit = 0xffffffffffffffff
-    in48Bit = 0xffffffffffff
-    in32Bit = 0xffffffff
-    in16Bit = 0xffff
-    in8Bit = 0xff
