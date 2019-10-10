@@ -16,3 +16,17 @@ class ReplacementPolicy:
             raise NotImplementedError("Cache replacement policy is not implemented!")
 
         # TODO::Implement
+
+    @staticmethod
+    def name():
+        return "Default"
+
+    @staticmethod
+    def default():
+        return 0
+
+    def touch(self, block):
+        pass
+
+    def evict(self, cache_set):
+        pass
