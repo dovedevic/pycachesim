@@ -33,7 +33,7 @@ class Cache:
 
         self._cache = dict()
         for cache_set in range(0, self._sets):
-            self._cache[cache_set] = [None for i in range(associativity)]
+            self._cache[cache_set] = [None for _ in range(associativity)]
 
     def get(self, address):
         """
