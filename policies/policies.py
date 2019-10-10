@@ -1,3 +1,5 @@
+import random
+
 
 class BaseReplacementPolicy:
     def __init__(self):
@@ -37,5 +39,14 @@ class LRUReplacementPolicy(BaseReplacementPolicy):
     def evict(self, cache_set):
         smallest = min(cache_set, key=lambda block: block.get_policy_data())
         return smallest
+
+
+class RandomReplacementPolicy(BaseReplacementPolicy):
+    @staticmethod
+    def name():
+        return 'RAND'
+
+    def evict(self, cache_set):
+        return random.choice(cache_set)
 
 
