@@ -55,3 +55,10 @@ class Block:
         :return: int, the base address
         """
         return self._base_address
+
+    def get_policy_data(self):
+        """
+        Returns the policy metadata for this block
+        :return: metadata, for policy
+        """
+        return self._policy_data
