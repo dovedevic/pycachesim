@@ -50,3 +50,18 @@ class RandomReplacementPolicy(BaseReplacementPolicy):
         return random.choice(cache_set)
 
 
+class LFUReplacementPolicy(BaseReplacementPolicy):
+    @staticmethod
+    def name():
+        return 'LFU'
+
+    @staticmethod
+    def default():
+        return 0
+
+    def touch(self, block):
+        return block.get_policy_data() + 1
+
+    def evict(self, cache_set):
+        smallest = min(cache_set, key=lambda block: block.get_policy_data())
+        return smallest
