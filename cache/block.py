@@ -1,4 +1,4 @@
-from policies import ReplacementPolicy
+from policies.policies import ReplacementPolicy
 
 
 class Block:
@@ -11,7 +11,7 @@ class Block:
         Initializer for the generic cache block
         :param base_address: The tag and index of an address
         :param dirty: The determination if this block was ever writen to or not
-        :param policy_data: The replacement policy metadata that keeps track of the block
+        :param policy: The replacement policy metadata that keeps track of the block
         """
         self._base_address = base_address
         self._dirty = dirty
