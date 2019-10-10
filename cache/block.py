@@ -1,4 +1,4 @@
-from policies.policies import ReplacementPolicy
+from policies.replacement_policies import BaseReplacementPolicy as ReplacementPolicy
 
 
 class Block:

@@ -1,5 +1,5 @@
 import math
-from policies.policies import ReplacementPolicy
+from policies.replacement_policies import BaseReplacementPolicy as ReplacementPolicy
 from cache.block import Block
 from system.system import AddressSpace
 
