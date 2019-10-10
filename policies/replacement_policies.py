@@ -10,12 +10,11 @@ class BaseReplacementPolicy:
     def name():
         return "Default"
 
-    @staticmethod
-    def default():
-        return 0
+    def default(self):
+        return self._clock
 
     def touch(self, block):
-        return 0
+        return block.get_policy_data()
 
     def evict(self, cache_set):
         return None
@@ -28,10 +27,6 @@ class LRUReplacementPolicy(BaseReplacementPolicy):
     @staticmethod
     def name():
         return 'LRU'
-
-    @staticmethod
-    def default():
-        return 0
 
     def touch(self, block):
         return self._clock
@@ -55,8 +50,7 @@ class LFUReplacementPolicy(BaseReplacementPolicy):
     def name():
         return 'LFU'
 
-    @staticmethod
-    def default():
+    def default(self):
         return 0
 
     def touch(self, block):
@@ -72,8 +66,7 @@ class NMFUReplacementPolicy(BaseReplacementPolicy):
     def name():
         return 'NMFU'
 
-    @staticmethod
-    def default():
+    def default(self):
         return 0
 
     def touch(self, block):
@@ -88,10 +81,6 @@ class NMRUReplacementPolicy(BaseReplacementPolicy):
     @staticmethod
     def name():
         return 'NMRU'
-
-    @staticmethod
-    def default():
-        return 0
 
     def touch(self, block):
         return self._clock
