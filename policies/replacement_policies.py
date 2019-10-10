@@ -82,3 +82,20 @@ class NMFUReplacementPolicy(BaseReplacementPolicy):
     def evict(self, cache_set):
         mfu = max(cache_set, key=lambda block: block.get_policy_data())
         return random.choice([block for block in cache_set if block != mfu])
+
+
+class NMRUReplacementPolicy(BaseReplacementPolicy):
+    @staticmethod
+    def name():
+        return 'NMRU'
+
+    @staticmethod
+    def default():
+        return 0
+
+    def touch(self, block):
+        return self._clock
+
+    def evict(self, cache_set):
+        mru = max(cache_set, key=lambda block: block.get_policy_data())
+        return random.choice([block for block in cache_set if block != mru])
