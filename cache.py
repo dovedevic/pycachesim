@@ -1,5 +1,6 @@
 import math
 import enum
+from policies import ReplacementPolicy
 
 
 class Cache:
@@ -19,7 +20,7 @@ class Cache:
 
         self._cache = dict()
         for cache_set in range(0, self._sets):
-            self._cache[cache_set] = [Block(self._blocksize, 0, 0, 0) for i in range(associativity)]
+            self._cache[cache_set] = [None for i in range(associativity)]
 
     def _touch(self, block):
         """
@@ -37,27 +38,48 @@ class Cache:
         """
         return None
 
-    def put(self, block):
+    def put(self, address, data):
         """
-        Put the following block into the cache. If not space is present, use the policy to evict and return the eviction
-        :param block:
+        Put the following address block into the cache. If not space is present, use the policy to evict and return the eviction
+        :param address:
+        :param data
         :return replacement:
         """
-        return None
+
+        cache_set = address << self._tag_bits >> self._tag_bits + self._offset_bits
+        temp_block = Block(address >> self._offset_bits << self._offset_bits, 0, 1, data)
+        if temp_block in self._cache[cache_set]:
+            # Putting the same block in cache
+            return None
+        elif None in self._cache[cache_set]:
+            placement = self._cache[cache_set].index(None)
+            self._cache[cache_set][placement] = temp_block
+            return None
+        else:
+            pass
 
 
 class Block:
-    def __init__(self, size, dirty, valid, data):
-        self._size = size
+    def __init__(self, base_address, dirty: bool, policy: ReplacementPolicy):
+        self._base_address = base_address
         self._dirty = dirty
-        self._valid = valid
-        self._data = data
+        self._rep_policy = policy.default()
 
     def __str__(self):
-        return "[{}]{},{}:{}".format(self._size, self._dirty, self._valid, self._data)
+        return "[{}]{},{}".format(hex(self._base_address), self._dirty, self._rep_policy.name())
 
-    def write(self, new):
-        self._data = new
+    def __eq__(self, other):
+        return True if isinstance(other, Block) and self._base_address == other._base_address else False
+
+    def read(self):
+        self._rep_policy.touch()
+
+    def write(self):
+        self._rep_policy.touch()
+        self._dirty = True
+
+    def is_dirty(self):
+        return self._dirty
 
 
 class AddressSpace(enum.Enum):
