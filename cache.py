@@ -60,7 +60,17 @@ class Cache:
 
 
 class Block:
+    """
+    Defines the most atomic unit in a cache, the block
+    """
+
     def __init__(self, base_address, dirty: bool, policy: ReplacementPolicy):
+        """
+        Initializer for the generic cache block
+        :param base_address: The tag and index of an address
+        :param dirty: The determination if this block was ever writen to or not
+        :param policy: The replacement policy that keeps track of this block
+        """
         self._base_address = base_address
         self._dirty = dirty
         self._rep_policy = policy.default()
@@ -72,13 +82,25 @@ class Block:
         return True if isinstance(other, Block) and self._base_address == other._base_address else False
 
     def read(self):
+        """
+        Perform a simulated read on this cache block
+        :return: nothing
+        """
         self._rep_policy.touch()
 
     def write(self):
+        """
+        Perform a simulated write on this cache block
+        :return: nothing
+        """
         self._rep_policy.touch()
         self._dirty = True
 
     def is_dirty(self):
+        """
+        Returns if this block is written to, or dirty
+        :return: boolean, if this block is dirty
+        """
         return self._dirty
 
 
