@@ -22,4 +22,20 @@ class BaseReplacementPolicy:
         self._clock += 1
 
 
+class LRUReplacementPolicy(BaseReplacementPolicy):
+    @staticmethod
+    def name():
+        return 'LRU'
+
+    @staticmethod
+    def default():
+        return 0
+
+    def touch(self, block):
+        return self._clock
+
+    def evict(self, cache_set):
+        smallest = min(cache_set, key=lambda block: block.get_policy_data())
+        return smallest
+
 
