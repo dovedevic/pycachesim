@@ -9,7 +9,7 @@ class Cache:
     Defines one level or type of cache, the most atomic unit in a cache system
     """
 
-    def __init__(self, addressspace: AddressSpace, size: int, associativity: int, blocksize: int, policy: ReplacementPolicy):
+    def __init__(self, addressspace: AddressSpace, size: int, associativity: int, blocksize: int, policy: ReplacementPolicy, name="Cache"):
         """
         The initializer for the generic single cache
         :param addressspace: The address space (of type cache.AddressSpace) this cache runs on
@@ -17,6 +17,7 @@ class Cache:
         :param associativity: The number of ways in a set
         :param blocksize: The size in bytes of a single block
         :param policy: The replacement policy (of type policies.ReplacementPolicy) this cache runs evictions on
+        :param name: The custom name of this cache object
         """
         self._addressspace = addressspace.value
         self._size = size
@@ -24,10 +25,13 @@ class Cache:
         self._blocksize = blocksize
         self._blocks = size // blocksize
         self._sets = self._blocks // associativity
+        self.name = name
 
         self._offset_bits = int(math.log(self._blocksize, 2))
         self._index_bits = int(math.log(self._sets, 2))
         self._tag_bits = int(math.log(addressspace.value + 1, 2)) - self._offset_bits - self._index_bits
+
+        self._base_address_mask = 2 ** (self._index_bits + self._tag_bits) - 1
 
         self._policy = policy
 
@@ -73,3 +77,6 @@ class Cache:
             evicted_block_index = self._cache[cache_set].index(evicted_block)
             self._cache[cache_set][evicted_block_index] = block
             return evicted_block
+
+    def get_base_address_mask(self):
+        return self._base_address_mask
