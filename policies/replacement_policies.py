@@ -65,3 +65,20 @@ class LFUReplacementPolicy(BaseReplacementPolicy):
     def evict(self, cache_set):
         smallest = min(cache_set, key=lambda block: block.get_policy_data())
         return smallest
+
+
+class NMFUReplacementPolicy(BaseReplacementPolicy):
+    @staticmethod
+    def name():
+        return 'NMFU'
+
+    @staticmethod
+    def default():
+        return 0
+
+    def touch(self, block):
+        return block.get_policy_data() + 1
+
+    def evict(self, cache_set):
+        mfu = max(cache_set, key=lambda block: block.get_policy_data())
+        return random.choice([block for block in cache_set if block != mfu])
