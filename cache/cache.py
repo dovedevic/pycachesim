@@ -31,7 +31,7 @@ class Cache:
         self._index_bits = int(math.log(self._sets, 2))
         self._tag_bits = int(math.log(addressspace.value + 1, 2)) - self._offset_bits - self._index_bits
 
-        self._base_address_mask = 2 ** (self._index_bits + self._tag_bits) - 1
+        self._base_address_mask = (2 ** (self._index_bits + self._tag_bits) - 1) << self._offset_bits
 
         self._policy = policy
 
