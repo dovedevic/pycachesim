@@ -80,3 +80,6 @@ class Cache:
 
     def get_base_address_mask(self):
         return self._base_address_mask
+
+    def get_policy(self):
+        return self._policy
