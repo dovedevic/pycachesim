@@ -19,23 +19,27 @@ class ThreeLevelSUUInclusiveCacheSystem:
         self.IL1 = Cache(space, level_sizes[0], level_associativites[0], blocksize, policy, name='IL1')
         self.UL2 = Cache(space, level_sizes[1], level_associativites[1], blocksize, policy, name='UL2')
         self.UL3 = Cache(space, level_sizes[2], level_associativites[2], blocksize, policy, name='UL3')
-        self.MEM = Cache(space, 0, 0, blocksize, policy, name='MEM')
+        self.MEM = Cache(space, blocksize, 1, blocksize, policy, name='MEM')
 
     def perform_fetch(self, address, data_fetch=True):
         cache = self.DL1 if data_fetch else self.IL1
         block = cache.get(address)
+        hit_in = cache
         if not block:
             cache = self.UL2
             block = cache.get(address)
+            hit_in = self.UL2
             if not block:
                 cache = self.UL3
                 block = cache.get(address)
+                hit_in = self.UL3
                 if not block:
                     # Not in the cache, fetch from memory
                     # Allocate new block from MEM to L3
-                    block = Block(address & self.UL3.get_base_address_mask(), block.is_dirty(), self.UL3.get_policy())
+                    block = Block(address & self.UL3.get_base_address_mask(), False, self.UL3.get_policy())
 
                     # Don't care about evictions due to inclusivity
+                    hit_in = self.MEM
                     cache = self.UL3
                     cache.put(block)
 
@@ -53,7 +57,8 @@ class ThreeLevelSUUInclusiveCacheSystem:
             cache = self.DL1 if data_fetch else self.IL1
             cache.put(block)
 
-        return cache.name, block
+        self._replacement_policy.step()
+        return cache.name, hit_in.name, block
 
     def perform_set(self, address, data_fetch=True):
         pass
