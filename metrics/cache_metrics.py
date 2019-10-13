@@ -14,8 +14,8 @@ class CacheMetrics:
         self._accesses = 0
 
         self._average_latency = 0
-        self._max_latency = 999999999999
-        self._min_latency = 0
+        self._max_latency = 0
+        self._min_latency = 99999999999
 
         self._average_read_latency = 0
         self._average_write_latency = 0
@@ -51,6 +51,7 @@ class CacheMetrics:
         :return: None
         """
         self._caches[hit_in]['H'] += 1
+        self._accesses += 1
 
     def add_miss(self, miss_from):
         """
@@ -85,6 +86,12 @@ class CacheMetrics:
             out.write("Overall Stats:\n")
             for cache in self._caches:
                 out.write("{} - {} misses {} hits\n".format(cache, self._caches[cache]["M"], self._caches[cache]["H"]))
+            out.write("Average Latency: {}\n".format(self._average_latency / self._accesses))
+            out.write("Average Read Latency: {}\n".format(self._average_read_latency / self._accesses))
+            out.write("Average Write Latency: {}\n".format(self._average_write_latency / self._accesses))
+            out.write("Max Latency: {}\n".format(self._max_latency))
+            out.write("Min Latency: {}\n".format(self._min_latency))
+
             out.write("Transition Stats:\n")
             header = " ".join(["{}->{}".format(t[0], t[1]) for t in self._transition_pairs])
             out.write(header + "\n")
