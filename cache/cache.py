@@ -53,11 +53,21 @@ class Cache:
         else:
             return None
 
+    def remove(self, block: Block):
+        """
+        Remove the block from the cache, if it is present
+        :param block: The block to be removed
+        :return: None
+        """
+        cache_set = ((2 ** self._tag_bits) << (self._offset_bits + self._index_bits)) & block.base_address() >> self._offset_bits
+        if block in self._cache[cache_set]:
+            self._cache[cache_set] = None
+
     def put(self, block: Block):
         """
         Put the following block into the cache. If not space is present, use the policy to evict and return the
         eviction. If space is available or the block is present, place and return
-        :param block:
+        :param block: The block to be placed
         :return replacement:
         """
         cache_set = ((2 ** self._tag_bits) << (self._offset_bits + self._index_bits)) & block.base_address() >> self._offset_bits
