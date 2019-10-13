@@ -19,7 +19,8 @@ with open(sys.argv[1], 'r') as fp:
         policies.replacement_policies.LRUReplacementPolicy(),
         [2048, 4096, 4096*2],
         [4, 8, 16],
-        32
+        32,
+        level_latencies=[(2, 3),(10, 12),(50, 52), (100, 102)]
     )
     ###   Typically you change the above   ###
 
