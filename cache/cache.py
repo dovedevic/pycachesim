@@ -61,6 +61,7 @@ class Cache:
         """
         cache_set = ((2 ** self._tag_bits) << (self._offset_bits + self._index_bits)) & block.base_address() >> self._offset_bits
         if block in self._cache[cache_set]:
+            # Block is present in set, remove it
             placement = self._cache[cache_set].index(block)
             self._cache[cache_set][placement] = None
 
@@ -90,7 +91,15 @@ class Cache:
             return evicted_block
 
     def get_base_address_mask(self):
+        """
+        Return the base address mask
+        :return: base address mask
+        """
         return self._base_address_mask
 
     def get_policy(self):
+        """
+        Return the replacement policy for this cache
+        :return: replacement policy
+        """
         return self._policy
