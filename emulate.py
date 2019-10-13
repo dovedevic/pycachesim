@@ -1,4 +1,4 @@
-from hierarchies.three_level_suu_inclusive_cache_system import ThreeLevelSUUInclusiveCacheSystem as Cache
+from hierarchies.three_level_suu_exclusive_bypassing_cache_system import ThreeLevelSUUExclusiveBypassingCacheSystem as Cache
 from system.system import AddressSpace
 import policies.replacement_policies
 import sys, os
@@ -26,7 +26,7 @@ with open(sys.argv[1], 'r') as fp:
 
     print("Running trace...")
     for line in fp.readlines():
-        print(line.strip())
+        # print(line.strip())
         address_type, operation, hex_address = line.split(' ')
 
         is_data_op = True if address_type == "D" else False
