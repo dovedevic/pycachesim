@@ -21,14 +21,15 @@ class ThreeLevelSUUInclusiveCacheSystem:
         self.UL3 = Cache(space, level_sizes[2], level_associativites[2], blocksize, policy, name='UL3')
         self.MEM = Cache(space, blocksize, 1, blocksize, policy, name='MEM')
 
-    def perform_fetch(self, address, data_fetch=True):
-        cache = self.DL1 if data_fetch else self.IL1
+    def perform_fetch(self, address, for_data=True):
+        cache = self.DL1 if for_data else self.IL1
         block = cache.get(address)
         hit_in = cache
         if not block:
             cache = self.UL2
             block = cache.get(address)
             hit_in = self.UL2
+
             if not block:
                 cache = self.UL3
                 block = cache.get(address)
@@ -37,31 +38,78 @@ class ThreeLevelSUUInclusiveCacheSystem:
                     # Not in the cache, fetch from memory
                     # Allocate new block from MEM to L3
                     block = Block(address & self.UL3.get_base_address_mask(), False, self.UL3.get_policy())
-
+                    block.read()
                     # Don't care about evictions due to inclusivity
                     hit_in = self.MEM
                     cache = self.UL3
                     cache.put(block)
+                else:
+                    block.read()
 
                 # Allocate new block from L3 to L2
                 block = Block(address & self.UL2.get_base_address_mask(), block.is_dirty(), self.UL2.get_policy())
-
+                block.read()
                 # Don't care about evictions due to inclusivity
                 cache = self.UL2
                 cache.put(block)
+            else:
+                block.read()
 
             # Allocate new block from L2 to L1
-            block = Block(address & (self.DL1 if data_fetch else self.IL1).get_base_address_mask(), block.is_dirty(), (self.DL1 if data_fetch else self.IL1).get_policy())
-
+            block = Block(address & (self.DL1 if for_data else self.IL1).get_base_address_mask(), block.is_dirty(), (self.DL1 if for_data else self.IL1).get_policy())
+            block.read()
             # Don't care about evictions due to inclusivity
-            cache = self.DL1 if data_fetch else self.IL1
+            cache = self.DL1 if for_data else self.IL1
             cache.put(block)
-
+        else:
+            block.read()
         self._replacement_policy.step()
         return cache.name, hit_in.name, block
 
-    def perform_set(self, address, data_fetch=True):
-        pass
+    def perform_set(self, address, for_data=True):
+        cache = self.DL1 if for_data else self.IL1
+        block = cache.get(address)
+        hit_in = cache
+        if not block:
+            cache = self.UL2
+            block = cache.get(address)
+            hit_in = self.UL2
+
+            if not block:
+                cache = self.UL3
+                block = cache.get(address)
+                hit_in = self.UL3
+                if not block:
+                    # Not in the cache, fetch from memory
+                    # Allocate new block from MEM to L3
+                    block = Block(address & self.UL3.get_base_address_mask(), False, self.UL3.get_policy())
+                    block.write()
+                    # Don't care about evictions due to inclusivity
+                    hit_in = self.MEM
+                    cache = self.UL3
+                    cache.put(block)
+                else:
+                    block.write()
+
+                # Allocate new block from L3 to L2
+                block = Block(address & self.UL2.get_base_address_mask(), block.is_dirty(), self.UL2.get_policy())
+                block.write()
+                # Don't care about evictions due to inclusivity
+                cache = self.UL2
+                cache.put(block)
+            else:
+                block.write()
+
+            # Allocate new block from L2 to L1
+            block = Block(address & (self.DL1 if for_data else self.IL1).get_base_address_mask(), block.is_dirty(), (self.DL1 if for_data else self.IL1).get_policy())
+            block.write()
+            # Don't care about evictions due to inclusivity
+            cache = self.DL1 if for_data else self.IL1
+            cache.put(block)
+        else:
+            block.write()
+        self._replacement_policy.step()
+        return cache.name, hit_in.name, block
 
     def populate(self, address, cache: Cache, dirty=False):
         base_address = address & cache.get_base_address_mask()
