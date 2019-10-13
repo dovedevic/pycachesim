@@ -61,7 +61,8 @@ class Cache:
         """
         cache_set = ((2 ** self._tag_bits) << (self._offset_bits + self._index_bits)) & block.base_address() >> self._offset_bits
         if block in self._cache[cache_set]:
-            self._cache[cache_set] = None
+            placement = self._cache[cache_set].index(block)
+            self._cache[cache_set][placement] = None
 
     def put(self, block: Block):
         """
