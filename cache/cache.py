@@ -9,7 +9,7 @@ class Cache:
     Defines one level or type of cache, the most atomic unit in a cache system
     """
 
-    def __init__(self, addressspace: AddressSpace, size: int, associativity: int, blocksize: int, policy: ReplacementPolicy, name="Cache"):
+    def __init__(self, addressspace: AddressSpace, size: int, associativity: int, blocksize: int, policy: ReplacementPolicy, name="Cache", rlatency=0, wlatency=0):
         """
         The initializer for the generic single cache
         :param addressspace: The address space (of type cache.AddressSpace) this cache runs on
@@ -18,6 +18,8 @@ class Cache:
         :param blocksize: The size in bytes of a single block
         :param policy: The replacement policy (of type policies.ReplacementPolicy) this cache runs evictions on
         :param name: The custom name of this cache object
+        :param rlatency: The latency in some uniform time unit that this cache requires for a read
+        :param wlatency: The latency in some uniform time unit that this cache requires for a write
         """
         self._addressspace = addressspace.value
         self._size = size
@@ -26,6 +28,8 @@ class Cache:
         self._blocks = size // blocksize
         self._sets = self._blocks // associativity
         self.name = name
+        self.read_latency = rlatency
+        self.write_latency = wlatency
 
         self._offset_bits = int(math.log(self._blocksize, 2))
         self._index_bits = int(math.log(self._sets, 2))
