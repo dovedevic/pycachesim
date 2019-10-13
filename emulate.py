@@ -32,6 +32,6 @@ with open(sys.argv[1], 'r') as fp:
         method = simulate.perform_fetch if operation == "R" else simulate.perform_set
         int_address = int(hex_address, 16)
 
-        method(int_address, data_fetch=is_data_op)
+        method(int_address, for_data=is_data_op)
     print("Finished trace... Gathering metrics")
 print("Done.")
