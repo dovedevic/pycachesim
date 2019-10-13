@@ -43,7 +43,11 @@ class ThreeLevelSUUInclusiveBypassingCacheSystem:
                 (self.MEM.name, self.MEM.name),
                 (self.MEM.name, self.UL3.name), (self.MEM.name, self.UL2.name), (self.MEM.name, self.DL1.name),
                 (self.UL3.name, self.UL2.name), (self.UL3.name, self.DL1.name),
-                (self.UL2.name, self.DL1.name)
+                (self.UL2.name, self.DL1.name),
+                (self.IL1.name, self.IL1.name), (self.IL1.name, self.UL2.name), (self.IL1.name, self.UL3.name), (self.IL1.name, self.MEM.name),
+                (self.MEM.name, self.IL1.name),
+                (self.UL3.name, self.IL1.name),
+                (self.UL2.name, self.IL1.name),
             ]
         )
 
