@@ -17,15 +17,15 @@ with open(sys.argv[1], 'r') as fp:
     simulate = Cache(
         AddressSpace.in64Bit,
         policies.replacement_policies.LRUReplacementPolicy(),
-        [32768, 2097152, 16777216],
-        [32, 1, 1],
+        [2048, 4096, 4096*2],
+        [4, 8, 16],
         32
     )
     ###   Typically you change the above   ###
 
     print("Running trace...")
     for line in fp.readlines():
-        print(line)
+        print(line.strip())
         address_type, operation, hex_address = line.split(' ')
 
         is_data_op = True if address_type == "D" else False
@@ -33,5 +33,7 @@ with open(sys.argv[1], 'r') as fp:
         int_address = int(hex_address, 16)
 
         method(int_address, for_data=is_data_op)
+
     print("Finished trace... Gathering metrics")
+    simulate.stats.save('testing.out')
 print("Done.")
