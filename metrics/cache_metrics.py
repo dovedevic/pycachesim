@@ -17,7 +17,9 @@ class CacheMetrics:
         self._max_latency = 0
         self._min_latency = 99999999999
 
+        self._read_accesses = 0
         self._average_read_latency = 0
+        self._write_accesses = 0
         self._average_write_latency = 0
 
         self._caches = dict()
@@ -44,14 +46,19 @@ class CacheMetrics:
                 self._transitions[address]["{}->{}".format(transition[0], transition[1])] = 0
         self._transitions[address]["{}->{}".format(t_from, t_to)] += 1
 
-    def add_hit(self, hit_in):
+    def add_hit(self, hit_in, is_read):
         """
         Log a hit from the given cache
         :param hit_in: The Cache name where the hit occurred
+        :param is_read: Whether the hit was for a read or write
         :return: None
         """
         self._caches[hit_in]['H'] += 1
         self._accesses += 1
+        if is_read:
+            self._read_accesses += 1
+        else:
+            self._write_accesses += 1
 
     def add_miss(self, miss_from):
         """
@@ -86,9 +93,12 @@ class CacheMetrics:
             out.write("Overall Stats:\n")
             for cache in self._caches:
                 out.write("{} - {} misses {} hits\n".format(cache, self._caches[cache]["M"], self._caches[cache]["H"]))
+            out.write("Total Accesses: {}\n".format(self._accesses))
+            out.write("Total Read Accesses: {}\n".format(self._read_accesses))
+            out.write("Total Write Accesses: {}\n".format(self._write_accesses))
             out.write("Average Latency: {}\n".format(self._average_latency / self._accesses))
-            out.write("Average Read Latency: {}\n".format(self._average_read_latency / self._accesses))
-            out.write("Average Write Latency: {}\n".format(self._average_write_latency / self._accesses))
+            out.write("Average Read Latency: {}\n".format(self._average_read_latency / self._read_accesses))
+            out.write("Average Write Latency: {}\n".format(self._average_write_latency / self._write_accesses))
             out.write("Max Latency: {}\n".format(self._max_latency))
             out.write("Min Latency: {}\n".format(self._min_latency))
 
