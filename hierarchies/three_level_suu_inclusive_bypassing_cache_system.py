@@ -103,7 +103,7 @@ class ThreeLevelSUUInclusiveBypassingCacheSystem:
         else:
             block.read()
         self._replacement_policy.step()
-        self.stats.add_hit(hit_in.name)
+        self.stats.add_hit(hit_in.name, for_data)
         self.stats.add_transition(hit_in.name, cache.name, address)
         return cache.name, hit_in.name, block
 
@@ -147,7 +147,7 @@ class ThreeLevelSUUInclusiveBypassingCacheSystem:
         else:
             block.write()
         self._replacement_policy.step()
-        self.stats.add_hit(hit_in.name)
+        self.stats.add_hit(hit_in.name, for_data)
         self.stats.add_transition(hit_in.name, cache.name, address)
         return cache.name, hit_in.name, block
 
