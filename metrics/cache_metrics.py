@@ -112,14 +112,14 @@ class CacheMetrics:
             out.write("Total Write Accesses: {}\n".format(self._write_accesses))
             out.write("Total Data Accesses: {}\n".format(self._data_accesses))
             out.write("Total Instr Accesses: {}\n".format(self._instruction_accesses))
-            out.write("Average Latency: {}\n".format(self._average_latency / self._accesses))
-            out.write("Average Read Latency: {}\n".format(self._average_read_latency / self._read_accesses))
-            out.write("Average Write Latency: {}\n".format(self._average_write_latency / self._write_accesses))
+            out.write("Average Latency: {}\n".format(self._average_latency / (self._accesses if self._accesses > 0 else 1)))
+            out.write("Average Read Latency: {}\n".format(self._average_read_latency / (self._read_accesses if self._read_accesses > 0 else 1)))
+            out.write("Average Write Latency: {}\n".format(self._average_write_latency / (self._write_accesses if self._write_accesses > 0 else 1)))
 
             out.write("Transition Stats:\n")
             header = " ".join(["{}->{}".format(t[0], t[1]) for t in self._transition_pairs])
             out.write(header + "\n")
             for address in self._transitions:
-                self._transitions[address]["avg-distance"] /= self._transitions[address]["accesses"]
+                self._transitions[address]["avg-distance"] /= self._transitions[address]["accesses"] if self._transitions[address]["accesses"] > 0 else 1
                 del self._transitions[address]["last-access"]
                 out.write("{}:{}\n".format(hex(address), str(self._transitions[address])))
