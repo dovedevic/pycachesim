@@ -12,14 +12,13 @@ class CacheMetrics:
         from the cache list and any possible transition between them (from, to).
         """
         self._accesses = 0
+        self._instruction_accesses = 0
+        self._data_accesses = 0
+        self._read_accesses = 0
+        self._write_accesses = 0
 
         self._average_latency = 0
-        self._max_latency = 0
-        self._min_latency = 99999999999
-
-        self._read_accesses = 0
         self._average_read_latency = 0
-        self._write_accesses = 0
         self._average_write_latency = 0
 
         self._caches = dict()
@@ -32,6 +31,14 @@ class CacheMetrics:
         self._transition_pairs = transition_pairs
         self._address_tracker = dict()
 
+    def _init_transition(self, address):
+        self._transitions[address] = dict()
+        for transition in self._transition_pairs:
+            self._transitions[address]["{}->{}".format(transition[0], transition[1])] = 0
+            self._transitions[address]["accesses"] = 0
+            self._transitions[address]["last-access"] = self._accesses
+            self._transitions[address]["avg-distance"] = 0
+
     def add_transition(self, t_from, t_to, address):
         """
         Add a transition from one cache to another for a block / address
@@ -41,16 +48,16 @@ class CacheMetrics:
         :return:
         """
         if address not in self._transitions:
-            self._transitions[address] = dict()
-            for transition in self._transition_pairs:
-                self._transitions[address]["{}->{}".format(transition[0], transition[1])] = 0
+            self._init_transition(address)
         self._transitions[address]["{}->{}".format(t_from, t_to)] += 1
 
-    def add_hit(self, hit_in, is_read):
+    def add_hit(self, address, hit_in, is_read, is_instruction):
         """
         Log a hit from the given cache
+        :param address: The address of the block or item that was found
         :param hit_in: The Cache name where the hit occurred
         :param is_read: Whether the hit was for a read or write
+        :param is_instruction: Whether the hit was for an instruction or for data
         :return: None
         """
         self._caches[hit_in]['H'] += 1
@@ -59,6 +66,15 @@ class CacheMetrics:
             self._read_accesses += 1
         else:
             self._write_accesses += 1
+        if is_instruction:
+            self._instruction_accesses += 1
+        else:
+            self._data_accesses += 1
+        if address not in self._transitions:
+            self._init_transition(address)
+        self._transitions[address]["accesses"] += 1
+        self._transitions[address]["avg-distance"] += self._accesses - self._transitions[address]["last-access"]
+        self._transitions[address]["last-access"] = self._accesses
 
     def add_miss(self, miss_from):
         """
@@ -76,8 +92,6 @@ class CacheMetrics:
         :return: None
         """
         self._average_latency += access
-        self._max_latency = max(self._max_latency, access)
-        self._min_latency = min(self._min_latency, access)
         if is_read:
             self._average_read_latency += access
         else:
@@ -96,14 +110,16 @@ class CacheMetrics:
             out.write("Total Accesses: {}\n".format(self._accesses))
             out.write("Total Read Accesses: {}\n".format(self._read_accesses))
             out.write("Total Write Accesses: {}\n".format(self._write_accesses))
+            out.write("Total Data Accesses: {}\n".format(self._data_accesses))
+            out.write("Total Instr Accesses: {}\n".format(self._instruction_accesses))
             out.write("Average Latency: {}\n".format(self._average_latency / self._accesses))
             out.write("Average Read Latency: {}\n".format(self._average_read_latency / self._read_accesses))
             out.write("Average Write Latency: {}\n".format(self._average_write_latency / self._write_accesses))
-            out.write("Max Latency: {}\n".format(self._max_latency))
-            out.write("Min Latency: {}\n".format(self._min_latency))
 
             out.write("Transition Stats:\n")
             header = " ".join(["{}->{}".format(t[0], t[1]) for t in self._transition_pairs])
             out.write(header + "\n")
             for address in self._transitions:
+                self._transitions[address]["avg-distance"] /= self._transitions[address]["accesses"]
+                del self._transitions[address]["last-access"]
                 out.write("{}:{}\n".format(hex(address), str(self._transitions[address])))
