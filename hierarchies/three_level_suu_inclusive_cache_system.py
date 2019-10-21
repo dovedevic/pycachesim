@@ -95,6 +95,7 @@ class ThreeLevelSUUInclusiveCacheSystem:
                     self.stats.add_transition(self.UL2.name, self.UL3.name, evicted.base_address())
             else:
                 block.read()
+                self.UL3.get(address).read()
 
             # Allocate new block from L2 to L1
             block = Block(address & (self.DL1 if for_data else self.IL1).get_base_address_mask(), block.is_dirty(), (self.DL1 if for_data else self.IL1).get_policy())
@@ -106,6 +107,9 @@ class ThreeLevelSUUInclusiveCacheSystem:
                 self.stats.add_transition((self.DL1 if for_data else self.IL1).name, self.UL2.name, evicted.base_address())
         else:
             block.read()
+            self.UL2.get(address).read()
+            self.UL3.get(address).read()
+
         self._replacement_policy.step()
         self.stats.add_hit(address, hit_in.name, True, not for_data)
         self.stats.add_transition(hit_in.name, cache.name, address)
@@ -144,6 +148,7 @@ class ThreeLevelSUUInclusiveCacheSystem:
                         self.stats.add_transition(self.UL3.name, self.MEM.name, evicted.base_address())
                 else:
                     block.write()
+                    self.UL3.get(address).write()
 
                 # Allocate new block from L3 to L2
                 block = Block(address & self.UL2.get_base_address_mask(), block.is_dirty(), self.UL2.get_policy())
@@ -155,6 +160,8 @@ class ThreeLevelSUUInclusiveCacheSystem:
                     self.stats.add_transition(self.UL2.name, self.UL3.name, evicted.base_address())
             else:
                 block.write()
+                self.UL2.get(address).write()
+                self.UL3.get(address).write()
 
             # Allocate new block from L2 to L1
             block = Block(address & (self.DL1 if for_data else self.IL1).get_base_address_mask(), block.is_dirty(), (self.DL1 if for_data else self.IL1).get_policy())
