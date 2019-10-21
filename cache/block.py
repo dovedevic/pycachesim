@@ -27,19 +27,26 @@ class Block:
         else:
             return True if self._base_address == other else False
 
+    def touch(self):
+        """
+        Perform a touch event of the policy for this block
+        :return: nothing
+        """
+        self._policy_data = self._policy.touch(self)
+
     def read(self):
         """
         Perform a simulated read on this cache block
         :return: nothing
         """
-        self._policy_data = self._policy.touch(self)
+        self.touch()
 
     def write(self):
         """
         Perform a simulated write on this cache block
         :return: nothing
         """
-        self._policy_data = self._policy.touch(self)
+        self.touch()
         self._dirty = True
 
     def is_dirty(self):
