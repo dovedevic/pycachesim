@@ -51,132 +51,122 @@ class ThreeLevelSUUInclusiveCacheSystem:
             ]
         )
 
-    def perform_fetch(self, address, for_data=True):
+    def perform(self, address, for_data, is_fetch):
         cache = self.DL1 if for_data else self.IL1
         block = cache.get(address)
-        self.stats.add_latency(cache.read_latency, True)
+        self.stats.add_latency(cache.read_latency if is_fetch else cache.write_latency, is_fetch)
         hit_in = cache
         if block is None:
             self.stats.add_miss(cache.name)
             cache = self.UL2
             block = cache.get(address)
-            self.stats.add_latency(cache.read_latency, True)
+            self.stats.add_latency(cache.read_latency if is_fetch else cache.write_latency, is_fetch)
             hit_in = self.UL2
 
             if block is None:
                 self.stats.add_miss(cache.name)
                 cache = self.UL3
                 block = cache.get(address)
-                self.stats.add_latency(cache.read_latency, True)
+                self.stats.add_latency(cache.read_latency if is_fetch else cache.write_latency, is_fetch)
                 hit_in = self.UL3
                 if block is None:
                     self.stats.add_miss(cache.name)
                     # Not in the cache, fetch from memory
-                    self.stats.add_latency(self.MEM.read_latency, True)
+                    self.stats.add_latency(self.MEM.read_latency if is_fetch else self.MEM.write_latency, is_fetch)
                     # Allocate new block from MEM to L3
                     block = Block(address & self.UL3.get_base_address_mask(), False, self.UL3.get_policy())
-                    block.read()
+                    if is_fetch:
+                        block.read()
+                    else:
+                        block.write()
 
                     hit_in = self.MEM
                     cache = self.UL3
                     evicted = cache.put(block)
                     if evicted:
-                        self.stats.add_transition(self.UL3.name, self.MEM.name, evicted.base_address())
+                        # If the evicted block is in L1, transition from L1 to MEM
+                        if self.DL1.get(evicted.base_address()):
+                            self.stats.add_transition(self.DL1.name, self.MEM.name, evicted.base_address(), total_size=self.DL1.get_block_size())
+                            # If the evicted block is in L1, evict it too, and from L2
+                            self.DL1.remove_base(evicted.base_address())
+                            self.UL2.remove_base(evicted.base_address())
+                        elif self.IL1.get(evicted.base_address()):
+                            self.stats.add_transition(self.IL1.name, self.MEM.name, evicted.base_address(), total_size=self.IL1.get_block_size())
+                            # If the evicted block is in L1, evict it too, and from L2
+                            self.IL1.remove_base(evicted.base_address())
+                            self.UL2.remove_base(evicted.base_address())
+                        elif self.UL2.get(evicted.base_address()):
+                            self.stats.add_transition(self.UL2.name, self.MEM.name, evicted.base_address(), total_size=self.UL2.get_block_size())
+                            # If the evicted block is in L2, evict it
+                            self.UL2.remove_base(evicted.base_address())
+                        else:
+                            self.stats.add_transition(self.UL3.name, self.MEM.name, evicted.base_address(), total_size=self.UL3.get_block_size())
                 else:
-                    block.read()
+                    if is_fetch:
+                        block.read()
+                    else:
+                        block.write()
 
                 # Allocate new block from L3 to L2
                 block = Block(address & self.UL2.get_base_address_mask(), block.is_dirty(), self.UL2.get_policy())
-                block.read()
+                if is_fetch:
+                    block.read()
+                else:
+                    block.write()
 
                 cache = self.UL2
                 evicted = cache.put(block)
                 if evicted:
-                    self.stats.add_transition(self.UL2.name, self.UL3.name, evicted.base_address())
+                    # If the evicted block is in L1, transition from L1 to L3, else L2 to L3
+                    if self.DL1.get(evicted.base_address()):
+                        self.stats.add_transition(self.DL1.name, self.UL3.name, evicted.base_address(), total_size=self.DL1.get_block_size())
+                        # If the evicted block is in L1, evict it too
+                        self.DL1.remove_base(evicted.base_address())
+                    elif self.IL1.get(evicted.base_address()):
+                        self.stats.add_transition(self.IL1.name, self.UL3.name, evicted.base_address(), total_size=self.IL1.get_block_size())
+                        # If the evicted block is in L1, evict it too
+                        self.IL1.remove_base(evicted.base_address())
+                    else:
+                        self.stats.add_transition(self.UL2.name, self.UL3.name, evicted.base_address(), total_size=self.UL2.get_block_size())
+
             else:
-                block.read()
-                self.UL3.get(address).read()
+                if is_fetch:
+                    block.read()
+                else:
+                    block.write()
+                # Guaranteed by inclusivity
+                self.UL3.get(address).touch()
 
             # Allocate new block from L2 to L1
             block = Block(address & (self.DL1 if for_data else self.IL1).get_base_address_mask(), block.is_dirty(), (self.DL1 if for_data else self.IL1).get_policy())
-            block.read()
+            if is_fetch:
+                block.read()
+            else:
+                block.write()
 
             cache = self.DL1 if for_data else self.IL1
             evicted = cache.put(block)
             if evicted:
-                self.stats.add_transition((self.DL1 if for_data else self.IL1).name, self.UL2.name, evicted.base_address())
+                self.stats.add_transition((self.DL1 if for_data else self.IL1).name, self.UL2.name, evicted.base_address(), total_size=(self.DL1 if for_data else self.IL1).get_block_size())
         else:
-            block.read()
-            self.UL2.get(address).read()
-            self.UL3.get(address).read()
+            if is_fetch:
+                block.read()
+            else:
+                block.write()
+            # Guaranteed by inclusivity
+            self.UL2.get(address).touch()
+            self.UL3.get(address).touch()
 
         self._replacement_policy.step()
-        self.stats.add_hit(address, hit_in.name, True, not for_data)
+        self.stats.add_hit(address, hit_in.name, is_fetch, not for_data)
         self.stats.add_transition(hit_in.name, cache.name, address)
         return cache.name, hit_in.name, block
+
+    def perform_fetch(self, address, for_data=True):
+        self.perform(address, for_data, True)
 
     def perform_set(self, address, for_data=True):
-        cache = self.DL1 if for_data else self.IL1
-        block = cache.get(address)
-        self.stats.add_latency(cache.write_latency, False)
-        hit_in = cache
-        if block is None:
-            self.stats.add_miss(cache.name)
-            cache = self.UL2
-            block = cache.get(address)
-            self.stats.add_latency(cache.write_latency, False)
-            hit_in = self.UL2
-
-            if block is None:
-                self.stats.add_miss(cache.name)
-                cache = self.UL3
-                block = cache.get(address)
-                self.stats.add_latency(cache.write_latency, False)
-                hit_in = self.UL3
-                if block is None:
-                    self.stats.add_miss(cache.name)
-                    # Not in the cache, fetch from memory
-                    self.stats.add_latency(self.MEM.write_latency, False)
-                    # Allocate new block from MEM to L3
-                    block = Block(address & self.UL3.get_base_address_mask(), False, self.UL3.get_policy())
-                    block.write()
-
-                    hit_in = self.MEM
-                    cache = self.UL3
-                    evicted = cache.put(block)
-                    if evicted:
-                        self.stats.add_transition(self.UL3.name, self.MEM.name, evicted.base_address())
-                else:
-                    block.write()
-                    self.UL3.get(address).write()
-
-                # Allocate new block from L3 to L2
-                block = Block(address & self.UL2.get_base_address_mask(), block.is_dirty(), self.UL2.get_policy())
-                block.write()
-
-                cache = self.UL2
-                evicted = cache.put(block)
-                if evicted:
-                    self.stats.add_transition(self.UL2.name, self.UL3.name, evicted.base_address())
-            else:
-                block.write()
-                self.UL2.get(address).write()
-                self.UL3.get(address).write()
-
-            # Allocate new block from L2 to L1
-            block = Block(address & (self.DL1 if for_data else self.IL1).get_base_address_mask(), block.is_dirty(), (self.DL1 if for_data else self.IL1).get_policy())
-            block.write()
-
-            cache = self.DL1 if for_data else self.IL1
-            evicted = cache.put(block)
-            if evicted:
-                self.stats.add_transition((self.DL1 if for_data else self.IL1).name, self.UL2.name, evicted.base_address())
-        else:
-            block.write()
-        self._replacement_policy.step()
-        self.stats.add_hit(address, hit_in.name, False, not for_data)
-        self.stats.add_transition(hit_in.name, cache.name, address)
-        return cache.name, hit_in.name, block
+        self.perform(address, for_data, False)
 
     def populate(self, address, cache: Cache, dirty=False):
         base_address = address & cache.get_base_address_mask()
