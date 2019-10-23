@@ -49,7 +49,7 @@ class Cache:
         :param address: The address to be fetched
         :return hit: None if miss, Block if hit
         """
-        cache_set = ((2 ** self._tag_bits) << (self._offset_bits + self._index_bits)) & address >> self._offset_bits
+        cache_set = (self._sets - 1) & (address >> self._offset_bits)
         base_address = address >> self._offset_bits << self._offset_bits
         if base_address in self._cache[cache_set]:
             fetched = self._cache[cache_set].index(base_address)
@@ -63,11 +63,25 @@ class Cache:
         :param block: The block to be removed
         :return: None
         """
-        cache_set = ((2 ** self._tag_bits) << (self._offset_bits + self._index_bits)) & block.base_address() >> self._offset_bits
+        cache_set = (self._sets - 1) & (block.base_address() >> self._offset_bits)
         if block in self._cache[cache_set]:
             # Block is present in set, remove it
             placement = self._cache[cache_set].index(block)
             self._cache[cache_set][placement] = None
+
+    def remove_base(self, base_address):
+        """
+        Remove the block that corresponds to base_address from the cache, if it is present
+        :param base_address: The base_address of the block to be removed
+        :return: None
+        """
+        cache_set = (self._sets - 1) & (base_address >> self._offset_bits)
+        if base_address in self._cache[cache_set]:
+            # Block is present in set, remove it
+            placement = self._cache[cache_set].index(base_address)
+            self._cache[cache_set][placement] = None
+        else:
+            print('shouldnt happen')
 
     def put(self, block: Block):
         """
@@ -76,7 +90,7 @@ class Cache:
         :param block: The block to be placed
         :return replacement:
         """
-        cache_set = ((2 ** self._tag_bits) << (self._offset_bits + self._index_bits)) & block.base_address() >> self._offset_bits
+        cache_set = (self._sets - 1) & (block.base_address() >> self._offset_bits)
         if block in self._cache[cache_set]:
             # Block is existing in cache, assuming rewrite
             replacement = self._cache[cache_set].index(block)
@@ -107,3 +121,10 @@ class Cache:
         :return: replacement policy
         """
         return self._policy
+
+    def get_block_size(self):
+        """
+        Return the size of the blocks in this cache
+        :return: block size
+        """
+        return self._blocksize
