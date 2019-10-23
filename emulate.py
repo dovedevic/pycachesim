@@ -1,4 +1,4 @@
-from hierarchies.three_level_suu_exclusive_bypassing_cache_system import ThreeLevelSUUExclusiveBypassingCacheSystem as Cache
+from hierarchies.three_level_suu_inclusive_cache_system import ThreeLevelSUUInclusiveCacheSystem as Cache
 from system.system import AddressSpace
 import policies.replacement_policies
 import sys, os
