@@ -1,3 +1,5 @@
+import bisect
+
 
 class CacheMetrics:
     """
@@ -30,26 +32,35 @@ class CacheMetrics:
         self._transitions = dict()
         self._transition_pairs = transition_pairs
         self._address_tracker = dict()
+        self._addresses = []
 
     def _init_transition(self, address):
         self._transitions[address] = dict()
+        bisect.insort(self._addresses, address)
         for transition in self._transition_pairs:
             self._transitions[address]["{}->{}".format(transition[0], transition[1])] = 0
             self._transitions[address]["accesses"] = 0
             self._transitions[address]["last-access"] = self._accesses
             self._transitions[address]["avg-distance"] = 0
 
-    def add_transition(self, t_from, t_to, address):
+    def add_transition(self, t_from, t_to, address, total_size=0):
         """
         Add a transition from one cache to another for a block / address
         :param t_from: The cache name where the block originated
         :param t_to: The cache name where the block is destined
         :param address: The address/block that is being moved
+        :param total_size: The size of the block inputted, if its a block
         :return:
         """
-        if address not in self._transitions:
-            self._init_transition(address)
-        self._transitions[address]["{}->{}".format(t_from, t_to)] += 1
+        if total_size == 0:
+            if address not in self._transitions:
+                self._init_transition(address)
+            self._transitions[address]["{}->{}".format(t_from, t_to)] += 1
+        else:
+            start_addresses_index = bisect.bisect_left(self._addresses, address)
+            while start_addresses_index < len(self._addresses) and self._addresses[start_addresses_index] - address < total_size:
+                self._transitions[self._addresses[start_addresses_index]]["{}->{}".format(t_from, t_to)] += 1
+                start_addresses_index += 1
 
     def add_hit(self, address, hit_in, is_read, is_instruction):
         """
