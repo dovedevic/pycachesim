@@ -39,7 +39,7 @@ with open(sys.argv[1], 'r') as fp:
             # print(line.strip())
             at += 1
             r = line.strip().replace('\x00', '').split(' ')
-            if len(r) != 3 or (r[0] != "D" and r[0] != "I") or (r[1] != "R" and r[1] != "W") or len(r[2]) < 5 or 'x' in r[2][2:] or r[2][0] == 'x':  # Prevent strange malformed output from c++
+            if len(r) != 3 or (r[0] != "D" and r[0] != "I") or (r[1] != "R" and r[1] != "W") or len(r[2]) < 5 or 'x' in r[2][2:] or r[2][0] == 'x' or 'I' in r[2] or 'D' in r[2] or 'R' in r[2] or 'W' in r[2]:  # Prevent strange malformed output from c++
                 continue
             address_type, operation, hex_address = line.strip().replace('\x00', '').split(' ')
 
